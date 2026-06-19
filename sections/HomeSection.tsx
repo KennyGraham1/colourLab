@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/Card";
 import { ColourSwatch } from "@/components/ColourSwatch";
 import { cn } from "@/lib/cn";
 import { describeColor, randomPleasantHex, readableTextColor } from "@/lib/color";
+import { describeColorName } from "@/lib/colorNames";
 import { useAppState } from "@/store/AppStateProvider";
 import type { SectionId, SectionProps } from "@/types";
 
@@ -203,7 +204,12 @@ export function HomeSection({ onNavigate }: SectionProps) {
             className="flex min-h-[160px] items-end p-4"
             style={{ background: described.hex, color: experimentInk }}
           >
-            <p className="font-mono text-2xl font-bold">{described.hex}</p>
+            <div>
+              <p className="text-base font-semibold leading-tight opacity-90">
+                {describeColorName(described.hex)}
+              </p>
+              <p className="font-mono text-2xl font-bold">{described.hex}</p>
+            </div>
           </motion.div>
 
           <div className="flex flex-col gap-4 p-5">

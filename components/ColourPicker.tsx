@@ -10,7 +10,7 @@ import {
   randomPleasantHex,
   readableTextColor,
 } from "@/lib/color";
-import { describeColorName } from "@/lib/colorNames";
+import { describeColorName, getColorName } from "@/lib/colorNames";
 import { SliderControl } from "./SliderControl";
 
 const PRESETS = [
@@ -189,8 +189,8 @@ export function ColourPicker({
                 key={p}
                 type="button"
                 onClick={() => onChange(p)}
-                title={p}
-                aria-label={`Choose ${p}`}
+                title={`${getColorName(p)} (${p})`}
+                aria-label={`Choose ${getColorName(p)} (${p})`}
                 style={{ background: p }}
                 className={cn(
                   "h-7 w-full rounded-md ring-1 ring-inset ring-black/10 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",

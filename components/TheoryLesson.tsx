@@ -18,6 +18,7 @@ import {
   shades,
   tones,
 } from "@/lib/harmonies";
+import { describeColorName, getColorName } from "@/lib/colorNames";
 import { ColourSwatch } from "@/components/ColourSwatch";
 import { ColourPicker } from "@/components/ColourPicker";
 import { SliderControl } from "@/components/SliderControl";
@@ -120,7 +121,7 @@ function WheelHarmonyDemo({
           <ColourSwatch
             key={`${hex}-${i}`}
             hex={hex}
-            label={labels[i] ?? `Colour ${i + 1}`}
+            label={`${labels[i] ?? `Colour ${i + 1}`} · ${getColorName(hex)}`}
             showHex
             copyable
             size="lg"
@@ -168,6 +169,9 @@ function TemperatureDemo() {
         </div>
         <div>
           <p className="text-base font-semibold text-ink">
+            {describeColorName(hex)}
+          </p>
+          <p className="text-sm font-medium text-brand">
             {temperatureLabel[temp]}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -181,7 +185,7 @@ function TemperatureDemo() {
         <div className="mt-2 flex flex-wrap gap-4">
           <ColourSwatch
             hex={warmExample}
-            label="Warm example"
+            label={`Warm · ${getColorName(warmExample)}`}
             showHex
             copyable
             size="lg"
@@ -189,7 +193,7 @@ function TemperatureDemo() {
           />
           <ColourSwatch
             hex={coolExample}
-            label="Cool example"
+            label={`Cool · ${getColorName(coolExample)}`}
             showHex
             copyable
             size="lg"
@@ -271,10 +275,11 @@ function VariationDemo({ variant }: { variant: VariationTab }) {
           <ColourSwatch
             key={`${hex}-${i}`}
             hex={hex}
-            label={hex}
+            label={getColorName(hex)}
+            showHex
             copyable
             size="lg"
-            className="w-16"
+            className="w-20"
           />
         ))}
       </div>
@@ -336,6 +341,9 @@ function ChannelSliderDemo({
         </div>
         <div>
           <p className="text-base font-semibold text-ink">
+            {describeColorName(hex)}
+          </p>
+          <p className="text-sm font-medium text-muted">
             {meta.label}: {value}%
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted">{meta.note}</p>

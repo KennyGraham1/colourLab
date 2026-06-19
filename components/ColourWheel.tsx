@@ -9,6 +9,7 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import { clamp, hexToHsl, hslToHex, readableTextColor } from "@/lib/color";
+import { getColorName } from "@/lib/colorNames";
 
 export interface ColourWheelProps {
   value: string;
@@ -163,9 +164,9 @@ export function ColourWheel({
         role="slider"
         tabIndex={0}
         aria-label="Colour wheel. Drag or use arrow keys to set hue and saturation."
-        aria-valuetext={`${currentHex}, hue ${Math.round(h)} degrees, saturation ${Math.round(
-          s
-        )} percent`}
+        aria-valuetext={`${getColorName(currentHex)}, ${currentHex}, hue ${Math.round(
+          h
+        )} degrees, saturation ${Math.round(s)} percent`}
         aria-valuemin={0}
         aria-valuemax={360}
         aria-valuenow={Math.round(h)}
@@ -193,6 +194,7 @@ export function ColourWheel({
             <span
               key={`${markerHex}-${i}`}
               aria-hidden
+              title={`${getColorName(markerHex)} (${markerHex})`}
               className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white shadow-soft"
               style={{
                 left: `${p.x * 100}%`,
@@ -206,6 +208,7 @@ export function ColourWheel({
         {/* The draggable marker for the current value. */}
         <span
           aria-hidden
+          title={`${getColorName(currentHex)} (${currentHex})`}
           className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full ring-[3px] ring-white shadow-lift"
           style={{
             left: `${current.x * 100}%`,
