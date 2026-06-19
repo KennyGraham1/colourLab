@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Pipette, Shuffle } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
@@ -10,6 +10,7 @@ import {
   randomPleasantHex,
   readableTextColor,
 } from "@/lib/color";
+import { describeColorName } from "@/lib/colorNames";
 import { SliderControl } from "./SliderControl";
 
 const PRESETS = [
@@ -58,6 +59,8 @@ export function ColourPicker({
 }: ColourPickerProps) {
   const safe = normalizeHex(value) ?? "#000000";
   const hsl = hexToHsl(safe);
+  const name = describeColorName(safe);
+  const hexId = useId();
   const [draft, setDraft] = useState(safe);
 
   // Keep the hex text field in sync when the colour changes elsewhere.
@@ -95,18 +98,27 @@ export function ColourPicker({
           />
         </label>
 
-        <div className="flex-1">
-          <label
-            htmlFor="cl-hex-input"
-            className="mb-1 block text-sm font-medium text-ink"
-          >
-            {label}
-          </label>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-baseline justify-between gap-2">
+            <label
+              htmlFor={hexId}
+              className="text-sm font-medium text-ink"
+            >
+              {label}
+            </label>
+            {/* Live, friendly name of the current colour. */}
+            <span
+              className="truncate text-xs font-medium text-muted"
+              title={name}
+            >
+              {name}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="flex flex-1 items-center rounded-xl border border-border bg-surface px-3 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30">
               <span className="font-mono text-sm text-muted">#</span>
               <input
-                id="cl-hex-input"
+                id={hexId}
                 value={draft.replace(/^#/, "")}
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={(e) => commitDraft(e.target.value)}

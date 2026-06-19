@@ -84,7 +84,10 @@ export function ColourSwatch({
         {showHex && <span className="px-1 text-center leading-tight">{safe}</span>}
       </button>
       {label && (
-        <span className="max-w-[6rem] truncate text-center text-xs text-muted">
+        <span
+          title={typeof label === "string" ? label : undefined}
+          className="max-w-[7.5rem] truncate text-center text-xs text-muted"
+        >
           {label}
         </span>
       )}

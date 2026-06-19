@@ -9,7 +9,8 @@ import { ColourPicker } from "@/components/ColourPicker";
 import { ColourSwatch } from "@/components/ColourSwatch";
 import { useCopy } from "@/hooks/useCopy";
 import { useAppState } from "@/store/AppStateProvider";
-import { normalizeHex, readableTextColor } from "@/lib/color";
+import { describeColor, normalizeHex } from "@/lib/color";
+import { getColorName } from "@/lib/colorNames";
 import { cn } from "@/lib/cn";
 import type { Palette } from "@/types";
 
@@ -24,6 +25,27 @@ function fileStem(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return slug || "palette";
+}
+
+/**
+ * Set ctx.font to the largest size (down to a floor) at which `text` fits in
+ * `maxWidth`, so colour names never overflow their block in the PNG export.
+ */
+function fitFont(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  baseSize: number,
+  family: string,
+  weight = ""
+): void {
+  let size = baseSize;
+  const set = () => (ctx.font = `${weight} ${size}px ${family}`.trim());
+  set();
+  while (ctx.measureText(text).width > maxWidth && size > 9) {
+    size -= 1;
+    set();
+  }
 }
 
 /** Trigger a browser download for a Blob using a temporary anchor. */
@@ -88,7 +110,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     const norm = normalizeHex(draftHex);
     if (!norm) return;
     addColorToPalette(palette.id, norm);
-    toast("Colour added", norm);
+    toast(`Added ${getColorName(norm)}`, norm);
   };
 
   const handleCopyAll = async () => {
@@ -98,7 +120,24 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   };
 
   const handleExportJson = () => {
-    const json = JSON.stringify(palette, null, 2);
+    // A clean, human-friendly export: every colour carries its name + values,
+    // not just a hex code.
+    const exportData = {
+      name: palette.name,
+      colorCount: colors.length,
+      colors: colors.map((c) => {
+        const safe = normalizeHex(c.hex) ?? c.hex;
+        const d = describeColor(safe);
+        return {
+          hex: safe,
+          name: getColorName(safe),
+          ...(c.name ? { label: c.name } : {}),
+          rgb: d.rgb,
+          hsl: d.hsl,
+        };
+      }),
+    };
+    const json = JSON.stringify(exportData, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     downloadBlob(blob, `${fileStem(palette.name)}.json`);
     toast("Exported JSON");
@@ -110,9 +149,14 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       return;
     }
 
-    // Lay out each colour as a tall block with its hex label underneath.
+    // Lay out each colour as a tall block with its NAME and hex label underneath.
     const block = 160;
-    const labelBand = 40;
+    const labelBand = 60;
+    const pad = 10;
+    const sans =
+      "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+    const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
+
     const canvas = document.createElement("canvas");
     canvas.width = block * colors.length;
     canvas.height = block + labelBand;
@@ -122,22 +166,27 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       return;
     }
 
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
     colors.forEach((c, i) => {
       const safe = normalizeHex(c.hex) ?? "#000000";
       const x = i * block;
+      const cx = x + block / 2;
       // Colour block.
       ctx.fillStyle = safe;
       ctx.fillRect(x, 0, block, block);
-      // Label band uses readable text so the hex is always legible.
+      // Dark label band so name + hex are always legible.
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(x, block, block, labelBand);
+      // Colour name (bold, auto-sized to fit the block width).
       ctx.fillStyle = "#ffffff";
-      ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(safe, x + block / 2, block + labelBand / 2);
-      // Mark the readable-text colour reference so the variable is meaningful.
-      void readableTextColor(safe);
+      fitFont(ctx, getColorName(safe), block - pad * 2, 15, sans, "600");
+      ctx.fillText(getColorName(safe), cx, block + 22);
+      // Hex code below the name.
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = `13px ${mono}`;
+      ctx.fillText(safe, cx, block + 42);
     });
 
     canvas.toBlob((blob) => {
@@ -211,7 +260,9 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         ) : (
           <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             <AnimatePresence initial={false}>
-              {colors.map((c) => (
+              {colors.map((c) => {
+                const colorLabel = c.name ?? getColorName(c.hex);
+                return (
                 <motion.li
                   key={c.id}
                   layout
@@ -223,7 +274,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
                 >
                   <ColourSwatch
                     hex={c.hex}
-                    label={c.name}
+                    label={colorLabel}
                     showHex
                     copyable
                     size="lg"
@@ -231,14 +282,15 @@ export function PaletteCard({ palette }: { palette: Palette }) {
                   <button
                     type="button"
                     onClick={() => removeColorFromPalette(palette.id, c.id)}
-                    aria-label={`Remove colour ${c.hex}`}
+                    aria-label={`Remove ${colorLabel}`}
                     title="Remove colour"
                     className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted opacity-0 shadow-soft transition hover:text-rose-600 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand group-hover:opacity-100"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden />
                   </button>
                 </motion.li>
-              ))}
+                );
+              })}
             </AnimatePresence>
           </ul>
         )}

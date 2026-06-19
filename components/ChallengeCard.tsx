@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, RotateCcw, Sparkles, Target, Trophy } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { randomPleasantHex } from "@/lib/color";
+import { getColorName } from "@/lib/colorNames";
 import { evaluateGuess, PASS_THRESHOLD, type Feedback } from "@/lib/challenges";
 import { useAppState } from "@/store/AppStateProvider";
 import type { Challenge } from "@/types";
@@ -77,11 +78,16 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
       <CardBody className="flex flex-1 flex-col gap-5">
         {/* Reference colours: always the start, plus the target for "match". */}
         <div className="flex flex-wrap items-start gap-5">
-          <ColourSwatch hex={challenge.baseHex} label="Start" showHex size="md" />
+          <ColourSwatch
+            hex={challenge.baseHex}
+            label={`Start · ${getColorName(challenge.baseHex)}`}
+            showHex
+            size="md"
+          />
           {showTarget && (
             <ColourSwatch
               hex={challenge.targetHex}
-              label="Target"
+              label={`Target · ${getColorName(challenge.targetHex)}`}
               showHex
               size="md"
             />
@@ -113,13 +119,22 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
 
         {/* Before / after context. */}
         <div className="flex items-center justify-center gap-4">
-          <ColourSwatch hex={guessHex} label="Your guess" showHex size="md" />
+          <ColourSwatch
+            hex={guessHex}
+            label={`Your guess · ${getColorName(guessHex)}`}
+            showHex
+            size="md"
+          />
           <span className="text-muted" aria-hidden>
             →
           </span>
           <ColourSwatch
             hex={showTarget ? challenge.targetHex : challenge.baseHex}
-            label={showTarget ? "Target" : "Start"}
+            label={
+              showTarget
+                ? `Target · ${getColorName(challenge.targetHex)}`
+                : `Start · ${getColorName(challenge.baseHex)}`
+            }
             showHex
             size="md"
           />
