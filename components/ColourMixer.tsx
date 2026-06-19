@@ -11,6 +11,7 @@ import { ColourPicker } from "@/components/ColourPicker";
 import { ResultPreview } from "@/components/ResultPreview";
 import { cn } from "@/lib/cn";
 import { randomPleasantHex } from "@/lib/color";
+import { getColorName } from "@/lib/colorNames";
 import {
   ADDITIVE_PRIMARIES,
   SUBTRACTIVE_PRIMARIES,
@@ -174,6 +175,7 @@ export function ColourMixer() {
               {channels.map((c) => {
                 const pct = Math.round(c.weight * 100);
                 const selected = c.id === activeChannel?.id;
+                const name = getColorName(c.hex);
                 return (
                   <motion.li
                     key={c.id}
@@ -188,19 +190,24 @@ export function ColourMixer() {
                       size="sm"
                       onClick={() => setActiveId(c.id)}
                       selected={selected}
-                      title={`Select ${c.hex}`}
+                      title={`Select ${name} (${c.hex})`}
                     />
                     <div className="min-w-0 flex-1">
                       <SliderControl
-                        label={`Strength of ${c.hex}`}
+                        label={`Strength of ${name}`}
                         hideLabel
                         value={pct}
                         valueLabel={`${pct}%`}
                         color={c.hex}
                         onChange={(v) => updateChannel(c.id, { weight: v / 100 })}
                       />
-                      <span className="mt-0.5 block font-mono text-xs text-muted">
-                        {c.hex}
+                      <span className="mt-0.5 flex items-baseline gap-1.5 text-xs">
+                        <span className="truncate font-medium text-ink">
+                          {name}
+                        </span>
+                        <span className="shrink-0 font-mono text-muted">
+                          {c.hex}
+                        </span>
                       </span>
                     </div>
                     <Button
@@ -208,7 +215,7 @@ export function ColourMixer() {
                       size="icon"
                       onClick={() => removeChannel(c.id)}
                       disabled={channels.length <= MIN_CHANNELS}
-                      aria-label={`Remove colour ${c.hex}`}
+                      aria-label={`Remove ${name}`}
                     >
                       <X className="h-4 w-4" aria-hidden />
                     </Button>
@@ -233,7 +240,12 @@ export function ColourMixer() {
             <div className="rounded-2xl border border-border bg-surface-2 p-4">
               <p className="mb-3 text-sm font-medium text-ink">
                 Editing{" "}
-                <span className="font-mono text-brand">{activeChannel.hex}</span>
+                <span className="text-brand">
+                  {getColorName(activeChannel.hex)}
+                </span>{" "}
+                <span className="font-mono text-xs text-muted">
+                  {activeChannel.hex}
+                </span>
               </p>
               <ColourPicker
                 value={activeChannel.hex}
@@ -256,7 +268,11 @@ export function ColourMixer() {
               <ul className="flex flex-wrap items-end gap-3">
                 {channels.map((c) => (
                   <li key={c.id} className="flex flex-col items-center gap-1">
-                    <ColourSwatch hex={c.hex} size="sm" />
+                    <ColourSwatch
+                      hex={c.hex}
+                      size="sm"
+                      title={`${getColorName(c.hex)} (${c.hex})`}
+                    />
                     <span className="font-mono text-[11px] tabular-nums text-muted">
                       {Math.round(c.weight * 100)}%
                     </span>
@@ -267,8 +283,14 @@ export function ColourMixer() {
                 className="h-5 w-5 shrink-0 text-muted"
                 aria-label="mixes to"
               />
-              <div className="flex flex-col items-center gap-1">
-                <ColourSwatch hex={resultHex} size="md" label={resultHex} />
+              <div className="flex flex-col items-center gap-1 text-center">
+                <ColourSwatch hex={resultHex} size="md" />
+                <span className="text-xs font-semibold text-ink">
+                  {getColorName(resultHex)}
+                </span>
+                <span className="font-mono text-[11px] text-muted">
+                  {resultHex}
+                </span>
               </div>
             </div>
           </CardBody>

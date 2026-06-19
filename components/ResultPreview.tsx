@@ -9,6 +9,7 @@ import {
   temperature,
   temperatureLabel,
 } from "@/lib/color";
+import { describeColorName } from "@/lib/colorNames";
 import { useCopy } from "@/hooks/useCopy";
 
 interface ValueRow {
@@ -35,6 +36,7 @@ export function ResultPreview({
   const ink = readableTextColor(safe);
   const { copy, copied } = useCopy();
   const temp = temperature(safe);
+  const name = describeColorName(safe);
 
   const rows: ValueRow[] = [
     { key: "HEX", value: safe },
@@ -57,11 +59,12 @@ export function ResultPreview({
         style={{ background: safe, color: ink }}
       >
         <div className="flex w-full items-end justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide opacity-70">
               {title}
             </p>
-            <p className="font-mono text-2xl font-bold">{safe}</p>
+            <p className="truncate text-2xl font-bold leading-tight">{name}</p>
+            <p className="font-mono text-sm font-medium opacity-80">{safe}</p>
           </div>
           <span
             className="rounded-full bg-black/15 px-2.5 py-1 text-xs font-semibold backdrop-blur"
