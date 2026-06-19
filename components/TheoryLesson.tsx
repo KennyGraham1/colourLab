@@ -304,6 +304,18 @@ const CHANNEL_META: Record<
   },
 };
 
+/** Base colours the user can apply the saturation / lightness change to. */
+const BASE_HUES: { name: string; h: number }[] = [
+  { name: "Red", h: 0 },
+  { name: "Orange", h: 28 },
+  { name: "Yellow", h: 50 },
+  { name: "Green", h: 135 },
+  { name: "Teal", h: 180 },
+  { name: "Blue", h: 215 },
+  { name: "Purple", h: 275 },
+  { name: "Pink", h: 325 },
+];
+
 /**
  * "slider" demo — adjust one HSL channel on a fixed hue and read the result.
  */
@@ -314,7 +326,9 @@ function ChannelSliderDemo({
 }) {
   // Start from a vivid mid colour so both channels have somewhere to travel.
   const [value, setValue] = useState(channel === "saturation" ? 80 : 55);
-  const baseHsl = { h: 215, s: 80, l: 55 };
+  // The base hue the channel change is applied to — chosen by the user below.
+  const [baseHue, setBaseHue] = useState(215);
+  const baseHsl = { h: baseHue, s: 80, l: 55 };
 
   const hsl =
     channel === "saturation"
@@ -330,6 +344,38 @@ function ChannelSliderDemo({
 
   return (
     <div className="space-y-4">
+      {/* Pick the base colour the channel change is applied to. */}
+      <div>
+        <DemoTitle>Base colour</DemoTitle>
+        <div
+          role="group"
+          aria-label="Choose a base colour"
+          className="mt-2 flex flex-wrap gap-2"
+        >
+          {BASE_HUES.map((b) => {
+            const swatch = hslToHex({ h: b.h, s: 80, l: 55 });
+            const active = b.h === baseHue;
+            return (
+              <button
+                key={b.name}
+                type="button"
+                onClick={() => setBaseHue(b.h)}
+                aria-pressed={active}
+                aria-label={`Base colour ${b.name}`}
+                title={b.name}
+                style={{ background: swatch }}
+                className={cn(
+                  "h-8 w-8 rounded-lg ring-1 ring-inset ring-black/10 transition hover:scale-110",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  active &&
+                    "ring-2 ring-brand ring-offset-2 ring-offset-surface-2"
+                )}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex items-center gap-4">
         <div
           className="grid h-24 w-32 place-items-center rounded-2xl ring-1 ring-inset ring-black/10"
