@@ -20,6 +20,7 @@ export type SectionId =
   | "mixer"
   | "theory"
   | "wheel"
+  | "variants"
   | "challenges"
   | "palettes";
 

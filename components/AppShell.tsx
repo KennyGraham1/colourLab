@@ -6,6 +6,7 @@ import {
   BookOpen,
   Home,
   Palette,
+  SwatchBook,
   Target,
   Trophy,
   type LucideIcon,
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "mixer", label: "Mixer", icon: Beaker, hint: "Mix colours interactively" },
   { id: "theory", label: "Theory", icon: BookOpen, hint: "Learn colour theory" },
   { id: "wheel", label: "Wheel", icon: Target, hint: "Wheel & harmonies" },
+  { id: "variants", label: "Variants", icon: SwatchBook, hint: "Explore colour variants" },
   { id: "challenges", label: "Challenges", icon: Trophy, hint: "Practice & feedback" },
   { id: "palettes", label: "Palettes", icon: Palette, hint: "Your saved colours" },
 ];

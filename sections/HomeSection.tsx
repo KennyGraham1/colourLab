@@ -10,6 +10,7 @@ import {
   Palette,
   Sparkles,
   Shuffle,
+  SwatchBook,
   Target,
   Trophy,
   type LucideIcon,
@@ -57,6 +58,12 @@ const FEATURES: FeatureCard[] = [
     title: "Colour wheel",
     description: "Spin harmonies — complementary, analogous, triadic and more.",
     icon: Palette,
+  },
+  {
+    id: "variants",
+    title: "Variants",
+    description: "See a colour's tints, shades, tones, ramps and harmonies.",
+    icon: SwatchBook,
   },
   {
     id: "challenges",

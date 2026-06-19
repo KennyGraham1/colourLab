@@ -8,6 +8,7 @@ import { HomeSection } from "@/sections/HomeSection";
 import { MixerSection } from "@/sections/MixerSection";
 import { TheorySection } from "@/sections/TheorySection";
 import { WheelSection } from "@/sections/WheelSection";
+import { VariantsSection } from "@/sections/VariantsSection";
 import { ChallengesSection } from "@/sections/ChallengesSection";
 import { PalettesSection } from "@/sections/PalettesSection";
 import type { SectionId, SectionProps } from "@/types";
@@ -17,6 +18,7 @@ const SECTIONS: Record<SectionId, (props: SectionProps) => JSX.Element> = {
   mixer: MixerSection,
   theory: TheorySection,
   wheel: WheelSection,
+  variants: VariantsSection,
   challenges: ChallengesSection,
   palettes: PalettesSection,
 };
