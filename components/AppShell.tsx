@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { SectionId } from "@/types";
+import { practiceChallenges } from "@/lib/challenges";
 import { useAppState } from "@/store/AppStateProvider";
 
 interface NavItem {
@@ -123,7 +124,11 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { progress } = useAppState();
-  const completed = progress.completed.length;
+  // Track progress against the fixed practice challenges specifically.
+  const practiceIds = practiceChallenges().map((c) => c.id);
+  const total = practiceIds.length;
+  const done = practiceIds.filter((id) => progress.completed.includes(id)).length;
+  const allDone = total > 0 && done === total;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1500px]">
@@ -144,18 +149,28 @@ export function AppShell({
           ))}
         </nav>
         <div className="mt-auto">
-          <div className="rounded-xl border border-border bg-surface-2/60 p-3">
+          <div
+            className={cn(
+              "rounded-xl border p-3 transition-colors",
+              allDone ? "border-amber-300 bg-amber-50" : "border-border bg-surface-2/60"
+            )}
+          >
             <div className="flex items-center gap-2 text-xs font-semibold text-ink">
               <Trophy className="h-4 w-4 text-amber-500" aria-hidden />
               Challenges
             </div>
             <p className="mt-1 text-xs text-muted">
-              {completed} completed
+              {allDone ? "All complete! 🎉" : `${done} / ${total} passed`}
             </p>
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-brand to-accent transition-all"
-                style={{ width: `${Math.min(100, (completed / 6) * 100)}%` }}
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  allDone
+                    ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                    : "bg-gradient-to-r from-brand to-accent"
+                )}
+                style={{ width: `${total ? (done / total) * 100 : 0}%` }}
               />
             </div>
           </div>

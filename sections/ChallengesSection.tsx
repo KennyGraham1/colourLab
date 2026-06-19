@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, RotateCcw, Sparkles, Trophy } from "lucide-react";
 import { dailyChallenge, practiceChallenges } from "@/lib/challenges";
 import { useAppState } from "@/store/AppStateProvider";
@@ -8,6 +9,89 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ChallengeCard } from "@/components/ChallengeCard";
+
+/** Confetti colours for the all-complete celebration. */
+const CONFETTI = [
+  "#6366F1",
+  "#8B5CF6",
+  "#EC4899",
+  "#F59E0B",
+  "#22C55E",
+  "#06B6D4",
+  "#EF4444",
+  "#FACC15",
+  "#14B8A6",
+  "#A855F7",
+];
+
+/**
+ * Celebration banner shown when every practice challenge has been passed.
+ * Server renders nothing here (progress hydrates client-side), so there's no
+ * hydration mismatch from the animation.
+ */
+function CompletionBanner({
+  total,
+  attempts,
+  onNavigate,
+}: {
+  total: number;
+  attempts: number;
+  onNavigate: SectionProps["onNavigate"];
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      role="status"
+      className="relative overflow-hidden rounded-2xl border border-brand/30 bg-gradient-to-br from-brand to-accent p-6 text-white shadow-glow sm:p-8"
+    >
+      {/* Falling confetti. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        {CONFETTI.map((c, i) => (
+          <motion.span
+            key={i}
+            className="absolute top-0 h-2.5 w-2.5 rounded-sm"
+            style={{ left: `${4 + (i * 92) / CONFETTI.length}%`, background: c }}
+            initial={{ y: -24, opacity: 0, rotate: 0 }}
+            animate={{ y: ["-24px", "260px"], opacity: [0, 1, 1, 0], rotate: 540 }}
+            transition={{
+              duration: 2.6,
+              delay: i * 0.13,
+              ease: "easeIn",
+              repeat: Infinity,
+              repeatDelay: 1.6,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 backdrop-blur">
+          <Trophy className="h-7 w-7" aria-hidden />
+        </span>
+        <div className="flex-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/80">
+            All challenges complete
+          </p>
+          <h2 className="text-2xl font-bold">You&rsquo;re a Colour Master! 🎉</h2>
+          <p className="mt-1 text-sm text-white/90 text-pretty">
+            You passed all {total} practice challenges
+            {attempts > 0 ? ` in ${attempts} attempts` : ""}. Your eye for colour
+            is dialled in.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onNavigate("palettes")}
+          className="shrink-0 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-brand shadow-soft transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand"
+        >
+          View your palettes
+        </button>
+      </div>
+    </motion.div>
+  );
+}
 
 /** A small labelled metric used in the progress summary row. */
 function Stat({
@@ -42,6 +126,11 @@ export function ChallengesSection({ onNavigate }: SectionProps) {
   const daily = dailyChallenge(dateKey);
   const practice = practiceChallenges();
 
+  // Completed when every practice challenge has been passed.
+  const allPassed =
+    practice.length > 0 &&
+    practice.every((c) => progress.completed.includes(c.id));
+
   const handleReset = () => {
     resetProgress();
     toast("Progress reset — fresh start!");
@@ -54,6 +143,17 @@ export function ChallengesSection({ onNavigate }: SectionProps) {
         title="Challenges"
         description="Sharpen your eye for colour. Read each prompt, dial in your answer and get constructive, directional feedback on how to get closer."
       />
+
+      {/* Celebration once every practice challenge is passed. */}
+      <AnimatePresence>
+        {allPassed && (
+          <CompletionBanner
+            total={practice.length}
+            attempts={progress.attempts}
+            onNavigate={onNavigate}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Featured daily challenge. */}
       <Card className="overflow-hidden border-brand/30 shadow-glow">

@@ -171,12 +171,14 @@ export function evaluateGuess(challenge: Challenge, guessHex: string): Feedback 
   const t = hexToHsl(challenge.targetHex);
   const tips: string[] = [];
 
-  // Hue guidance (account for wrap-around).
-  let dh = ((t.h - g.h + 540) % 360) - 180;
+  // Hue guidance. The challenge uses a linear hue slider (0–360°), so advise
+  // raising or lowering the hue value rather than "rotating" a wheel. dh is the
+  // shortest signed distance, so its sign points the way toward the target.
+  const dh = ((t.h - g.h + 540) % 360) - 180;
   const hueTip = dir(
     dh,
-    "Rotate the hue a little further clockwise.",
-    "Ease the hue back counter-clockwise.",
+    "Increase the hue a little — slide it higher.",
+    "Decrease the hue a little — slide it lower.",
     10
   );
   if (hueTip) tips.push(hueTip);

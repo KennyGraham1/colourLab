@@ -25,9 +25,9 @@ export interface ColourWheelProps {
  * Convert an HSL hue/saturation into an {x, y} position (0..1) on the disc,
  * where the centre is (0.5, 0.5). Hue maps to angle, saturation to radius.
  *
- * The visual conic-gradient starts at the top (`from 90deg`) and runs
- * clockwise, so hue 0 (red) sits at the top. We mirror that math here so the
- * markers line up with the painted hues.
+ * The visual conic-gradient starts at the top (`from 90deg`) with hue
+ * increasing in the painted order, so hue 0 (red) sits at the top. We mirror
+ * that math here so the markers line up with the painted hues.
  */
 function hslToPoint(h: number, s: number): { x: number; y: number } {
   // -90deg so hue 0 is at the top; convert to radians.
