@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Beaker,
@@ -74,12 +74,19 @@ const FEATURES: FeatureCard[] = [
 export function HomeSection({ onNavigate }: SectionProps) {
   const { hydrated, palettes, progress, quickSaveColor, toast } = useAppState();
 
-  // The "random colour experiment" mini. Seeded once on mount, reshuffled on demand.
-  const [experiment, setExperiment] = useState<string>(() => randomPleasantHex());
+  // The "random colour experiment" mini. Start from a FIXED colour so the
+  // server and first client render match (no hydration mismatch), then pick a
+  // random one after mount and on demand.
+  const [experiment, setExperiment] = useState<string>(HERO_SWATCHES[0]);
   const described = useMemo(() => describeColor(experiment), [experiment]);
   const experimentInk = readableTextColor(described.hex);
 
   const shuffle = () => setExperiment(randomPleasantHex());
+
+  // Randomise once after the component has mounted on the client.
+  useEffect(() => {
+    setExperiment(randomPleasantHex());
+  }, []);
 
   const copyHex = async () => {
     try {

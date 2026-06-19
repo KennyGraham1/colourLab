@@ -5,6 +5,7 @@ import { Check, Copy, Dices, Save } from "lucide-react";
 import type { SectionProps } from "@/types";
 import { cn } from "@/lib/cn";
 import { describeColor, hexToHsl, randomPleasantHex, withLightness } from "@/lib/color";
+import { describeColorName, getColorName } from "@/lib/colorNames";
 import { getHarmony, HARMONY_KINDS, type HarmonyKind } from "@/lib/harmonies";
 import { useCopy } from "@/hooks/useCopy";
 import { useAppState } from "@/store/AppStateProvider";
@@ -42,6 +43,7 @@ export function WheelSection({ onNavigate: _onNavigate }: SectionProps) {
 
   const lightness = Math.round(hexToHsl(base).l);
   const { hex, rgb, hsl } = describeColor(base);
+  const baseName = describeColorName(base);
 
   const paletteString = harmony.colors.join(", ");
   const copiedPalette = copied === paletteString;
@@ -91,6 +93,12 @@ export function WheelSection({ onNavigate: _onNavigate }: SectionProps) {
               onChange={setBase}
               markers={harmony.colors}
             />
+
+            {/* Friendly name of the currently selected colour. */}
+            <div className="flex flex-col items-center gap-1 text-center">
+              <span className="text-lg font-bold text-ink">{baseName}</span>
+              <span className="font-mono text-xs text-muted">{hex}</span>
+            </div>
 
             <SliderControl
               label="Lightness"
@@ -190,6 +198,7 @@ export function WheelSection({ onNavigate: _onNavigate }: SectionProps) {
                 <ColourSwatch
                   key={`${c}-${i}`}
                   hex={c}
+                  label={getColorName(c)}
                   showHex
                   copyable
                   size="md"

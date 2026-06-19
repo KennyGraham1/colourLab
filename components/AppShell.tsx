@@ -186,6 +186,16 @@ export function AppShell({
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           {children}
         </main>
+
+        <footer className="border-t border-border px-4 py-6 sm:px-6 lg:px-10">
+          <p className="text-center text-xs text-muted">
+            <span aria-hidden>&copy;</span>
+            <span className="sr-only">Copyright</span> {new Date().getFullYear()}{" "}
+            <span className="font-medium text-ink">Kekeli Graham</span>
+            <span className="mx-1.5 text-border">·</span>
+            Colour Lab. All rights reserved.
+          </p>
+        </footer>
       </div>
     </div>
   );
