@@ -63,4 +63,12 @@ export interface ChallengeProgress {
   /** Total challenges passed (score >= pass threshold). */
   completed: string[];
   attempts: number;
+  /** Cumulative points earned across all attempts. */
+  points: number;
+  /** Current consecutive-pass streak. */
+  streak: number;
+  /** Best streak ever reached. */
+  bestStreak: number;
+  /** Best star rating (0–3) achieved per challenge id. */
+  stars: Record<string, number>;
 }

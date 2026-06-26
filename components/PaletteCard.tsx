@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, Download, Image as ImageIcon, Plus, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Download,
+  Image as ImageIcon,
+  Paintbrush,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { ColourPicker } from "@/components/ColourPicker";
@@ -68,6 +77,8 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     removeColorFromPalette,
     clearPalette,
     deletePalette,
+    setThemeColor,
+    themeHex,
     toast,
   } = useAppState();
   const { copy, copied } = useCopy();
@@ -278,7 +289,21 @@ export function PaletteCard({ palette }: { palette: Palette }) {
                     showHex
                     copyable
                     size="lg"
+                    selected={normalizeHex(c.hex) === themeHex}
                   />
+                  {/* Use this colour as the app theme. */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setThemeColor(c.hex);
+                      toast(`Theme set to ${colorLabel}`, c.hex);
+                    }}
+                    aria-label={`Use ${colorLabel} as the app theme`}
+                    title="Use as app theme"
+                    className="absolute -left-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full border border-border bg-surface text-muted opacity-0 shadow-soft transition hover:text-brand focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand group-hover:opacity-100"
+                  >
+                    <Paintbrush className="h-3.5 w-3.5" aria-hidden />
+                  </button>
                   <button
                     type="button"
                     onClick={() => removeColorFromPalette(palette.id, c.id)}

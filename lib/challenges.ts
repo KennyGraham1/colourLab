@@ -17,6 +17,65 @@ import type { Challenge, ChallengeType } from "@/types";
 
 export const PASS_THRESHOLD = 80;
 
+/* --------------------------- stars, points, ranks --------------------- */
+
+/** Star rating (0–3) for a score: 1★ pass, 2★ great, 3★ near-perfect. */
+export function starsForScore(score: number): 0 | 1 | 2 | 3 {
+  if (score >= 97) return 3;
+  if (score >= 90) return 2;
+  if (score >= PASS_THRESHOLD) return 1;
+  return 0;
+}
+
+/** Points awarded for a single check (streakAfter = streak *after* this pass). */
+export function pointsForAttempt(score: number, streakAfter: number): number {
+  const passed = score >= PASS_THRESHOLD;
+  if (!passed) return Math.floor(score / 5); // small consolation for trying
+  const streakBonus = Math.max(0, streakAfter - 1) * 10;
+  const starBonus = starsForScore(score) * 15;
+  return score + streakBonus + starBonus;
+}
+
+export interface Rank {
+  name: string;
+  min: number;
+  emoji: string;
+}
+
+/** Progression ranks unlocked by total points. */
+export const RANKS: Rank[] = [
+  { name: "Colour Novice", min: 0, emoji: "🌱" },
+  { name: "Colour Apprentice", min: 300, emoji: "🎨" },
+  { name: "Colour Artisan", min: 800, emoji: "✨" },
+  { name: "Colour Stylist", min: 1600, emoji: "🌈" },
+  { name: "Colour Maestro", min: 2800, emoji: "🏅" },
+  { name: "Colour Master", min: 4500, emoji: "👑" },
+];
+
+export interface RankInfo {
+  current: Rank;
+  next: Rank | null;
+  /** 0–1 progress toward the next rank (1 when maxed). */
+  progress: number;
+  pointsToNext: number;
+}
+
+export function rankForPoints(points: number): RankInfo {
+  let current = RANKS[0];
+  let next: Rank | null = null;
+  for (let i = 0; i < RANKS.length; i++) {
+    if (points >= RANKS[i].min) {
+      current = RANKS[i];
+      next = RANKS[i + 1] ?? null;
+    }
+  }
+  const progress = next
+    ? Math.min(1, (points - current.min) / (next.min - current.min))
+    : 1;
+  const pointsToNext = next ? Math.max(0, next.min - points) : 0;
+  return { current, next, progress, pointsToNext };
+}
+
 /* ----------------------------- seeded RNG ----------------------------- */
 
 function mulberry32(seed: number) {
@@ -139,6 +198,17 @@ export function practiceChallenges(seedKey = "practice"): Challenge[] {
   return PRACTICE_TYPES.map((type, i) =>
     generateChallenge(`${seedKey}-${i + 1}`, type)
   );
+}
+
+/**
+ * A single fresh, varied challenge for endless play. The type is derived from
+ * the seed, so a unique seed yields a unique challenge with a unique id.
+ */
+export function makeChallenge(seedKey: string): Challenge {
+  const rand = mulberry32(seedFromString(`make:${seedKey}`));
+  const type =
+    PRACTICE_TYPES[Math.floor(rand() * PRACTICE_TYPES.length)] ?? "match";
+  return generateChallenge(seedKey, type);
 }
 
 /** Daily challenge derived from a yyyy-mm-dd date string (stable per day). */

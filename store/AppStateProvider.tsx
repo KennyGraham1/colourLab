@@ -9,12 +9,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { useLocalStorage, uid } from "@/hooks/useLocalStorage";
-import { PASS_THRESHOLD } from "@/lib/challenges";
+import {
+  PASS_THRESHOLD,
+  pointsForAttempt,
+  starsForScore,
+} from "@/lib/challenges";
+import { hexToHsl, hexToRgb, hslToHex, normalizeHex } from "@/lib/color";
 import type {
   ChallengeProgress,
   Palette,
@@ -59,6 +65,12 @@ interface AppState {
   recordAttempt: (challengeId: string, score: number) => void;
   resetProgress: () => void;
 
+  // Theme
+  /** The accent/brand colour the whole app is themed with. */
+  themeHex: string;
+  setThemeColor: (hex: string) => void;
+  resetTheme: () => void;
+
   // Toasts
   toasts: Toast[];
   toast: (message: string, hex?: string) => void;
@@ -67,18 +79,83 @@ interface AppState {
 
 const Ctx = createContext<AppState | null>(null);
 
+/** The app's default brand colour (matches globals.css). */
+const DEFAULT_THEME = "#6366F1";
+
+/**
+ * Recolour the whole app by driving the CSS variables the design system reads.
+ * --brand drives buttons/links/focus, --accent the gradient partner, and
+ * --brand-soft the light backgrounds.
+ */
+function applyTheme(hex: string): void {
+  if (typeof document === "undefined") return;
+  const norm = normalizeHex(hex) ?? DEFAULT_THEME;
+  const toVar = (h: string) => {
+    const { r, g, b } = hexToRgb(h);
+    return `${r} ${g} ${b}`;
+  };
+  const hsl = hexToHsl(norm);
+  // A hue-shifted sibling makes the brand→accent gradients look intentional.
+  const accent = hslToHex({ h: (hsl.h + 32) % 360, s: hsl.s, l: hsl.l });
+  // A very light tint for soft backgrounds (bg-brand-soft).
+  const soft = hslToHex({ h: hsl.h, s: Math.min(85, Math.max(35, hsl.s)), l: 92 });
+
+  const root = document.documentElement;
+  root.style.setProperty("--brand", toVar(norm));
+  root.style.setProperty("--accent", toVar(accent));
+  root.style.setProperty("--brand-soft", toVar(soft));
+}
+
 const EMPTY_PROGRESS: ChallengeProgress = {
   best: {},
   completed: [],
   attempts: 0,
+  points: 0,
+  streak: 0,
+  bestStreak: 0,
+  stars: {},
 };
+
+/** Fill in any fields missing from older stored progress. */
+function normalizeProgress(p: ChallengeProgress | undefined): ChallengeProgress {
+  return {
+    best: p?.best ?? {},
+    completed: p?.completed ?? [],
+    attempts: p?.attempts ?? 0,
+    points: p?.points ?? 0,
+    streak: p?.streak ?? 0,
+    bestStreak: p?.bestStreak ?? 0,
+    stars: p?.stars ?? {},
+  };
+}
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [palettes, setPalettes, { hydrated: pHydrated }] = useLocalStorage<
     Palette[]
   >("colourlab.palettes.v1", [STARTER_PALETTE]);
-  const [progress, setProgress, { hydrated: cHydrated }] =
+  const [progressRaw, setProgress, { hydrated: cHydrated }] =
     useLocalStorage<ChallengeProgress>("colourlab.progress.v1", EMPTY_PROGRESS);
+  // Always expose a complete progress object even if older data is missing keys.
+  const progress = useMemo(() => normalizeProgress(progressRaw), [progressRaw]);
+
+  const [themeHex, setThemeHex] = useLocalStorage<string>(
+    "colourlab.theme.v1",
+    DEFAULT_THEME
+  );
+
+  // Apply the theme to the document whenever it changes (client only).
+  useEffect(() => {
+    applyTheme(themeHex);
+  }, [themeHex]);
+
+  const setThemeColor = useCallback(
+    (hex: string) => setThemeHex(normalizeHex(hex) ?? DEFAULT_THEME),
+    [setThemeHex]
+  );
+  const resetTheme = useCallback(
+    () => setThemeHex(DEFAULT_THEME),
+    [setThemeHex]
+  );
 
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -194,16 +271,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const recordAttempt = useCallback(
     (challengeId: string, score: number) => {
-      setProgress((prev) => {
+      setProgress((prevRaw) => {
+        const prev = normalizeProgress(prevRaw);
+        const passed = score >= PASS_THRESHOLD;
         const best = Math.max(prev.best[challengeId] ?? 0, score);
         const completed =
-          score >= PASS_THRESHOLD && !prev.completed.includes(challengeId)
+          passed && !prev.completed.includes(challengeId)
             ? [...prev.completed, challengeId]
             : prev.completed;
+        const streak = passed ? prev.streak + 1 : 0;
+        const bestStreak = Math.max(prev.bestStreak, streak);
+        const star = starsForScore(score);
+        const stars = {
+          ...prev.stars,
+          [challengeId]: Math.max(prev.stars[challengeId] ?? 0, star),
+        };
+        const points = prev.points + pointsForAttempt(score, streak);
         return {
           best: { ...prev.best, [challengeId]: best },
           completed,
           attempts: prev.attempts + 1,
+          points,
+          streak,
+          bestStreak,
+          stars,
         };
       });
     },
@@ -229,6 +320,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       progress,
       recordAttempt,
       resetProgress,
+      themeHex,
+      setThemeColor,
+      resetTheme,
       toasts,
       toast,
       dismissToast,
@@ -247,6 +341,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       progress,
       recordAttempt,
       resetProgress,
+      themeHex,
+      setThemeColor,
+      resetTheme,
       toasts,
       toast,
       dismissToast,

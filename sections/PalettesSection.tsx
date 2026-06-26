@@ -1,18 +1,25 @@
 "use client";
 
-import { Library, Plus, Sparkles } from "lucide-react";
+import { Library, Paintbrush, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PaletteCard } from "@/components/PaletteCard";
 import { EmptyState, SectionHeading } from "@/components/SectionHeading";
 import { useAppState } from "@/store/AppStateProvider";
+import { describeColorName } from "@/lib/colorNames";
 import type { SectionProps } from "@/types";
 
 export function PalettesSection({ onNavigate }: SectionProps) {
-  const { hydrated, palettes, createPalette, toast } = useAppState();
+  const { hydrated, palettes, createPalette, toast, themeHex, resetTheme } =
+    useAppState();
 
   const handleNew = () => {
     createPalette();
     toast("New palette created");
+  };
+
+  const handleResetTheme = () => {
+    resetTheme();
+    toast("Theme reset to default");
   };
 
   return (
@@ -28,6 +35,27 @@ export function PalettesSection({ onNavigate }: SectionProps) {
           </Button>
         }
       />
+
+      {/* App theme control. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-soft">
+        <span
+          className="h-9 w-9 shrink-0 rounded-lg ring-1 ring-inset ring-black/10"
+          style={{ background: themeHex }}
+          aria-hidden
+        />
+        <div className="mr-auto min-w-0">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <Paintbrush className="h-4 w-4 text-brand" aria-hidden /> App theme
+          </p>
+          <p className="text-xs text-muted text-pretty">
+            Hover a colour below and click the brush to recolour the whole app.
+            Currently {describeColorName(themeHex)} ({themeHex}).
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleResetTheme}>
+          <RotateCcw className="h-4 w-4" aria-hidden /> Reset theme
+        </Button>
+      </div>
 
       {!hydrated ? (
         // Subtle skeleton while localStorage loads, avoiding an empty-state flash.

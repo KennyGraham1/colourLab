@@ -1,18 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, RotateCcw, Sparkles, Target, Trophy } from "lucide-react";
+import { ArrowRight, Check, RotateCcw, Sparkles, Target, Trophy } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { randomPleasantHex } from "@/lib/color";
 import { getColorName } from "@/lib/colorNames";
-import { evaluateGuess, PASS_THRESHOLD, type Feedback } from "@/lib/challenges";
+import {
+  evaluateGuess,
+  PASS_THRESHOLD,
+  pointsForAttempt,
+  starsForScore,
+  type Feedback,
+} from "@/lib/challenges";
 import { useAppState } from "@/store/AppStateProvider";
 import type { Challenge } from "@/types";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ColourPicker } from "@/components/ColourPicker";
 import { ColourSwatch } from "@/components/ColourSwatch";
+import { Confetti } from "@/components/Confetti";
+import { Stars } from "@/components/Stars";
+
+/** Varied, encouraging headlines so wins never feel canned. */
+const WIN_LINES = [
+  "Bullseye! 🎯",
+  "Nailed it! 🎉",
+  "Gorgeous match! 🌈",
+  "You've got the eye! 👁️",
+  "Colour wizardry! ✨",
+];
 
 /** Visual treatment for each difficulty level. Paired with the text label so the
  * meaning is never carried by colour alone. */
@@ -30,8 +47,24 @@ const NEUTRAL_GUESS = "#9CA3AF";
  * lets the user dial in a guess, scores it with constructive directional tips
  * and records the attempt to global progress.
  */
-export function ChallengeCard({ challenge }: { challenge: Challenge }) {
+export function ChallengeCard({
+  challenge,
+  onSolved,
+}: {
+  challenge: Challenge;
+  /** Called shortly after a pass so the parent can swap in a new challenge. */
+  onSolved?: () => void;
+}) {
   const { recordAttempt, progress } = useAppState();
+  const advanceTimer = useRef<number | null>(null);
+
+  // Clear any pending auto-advance when the card unmounts.
+  useEffect(
+    () => () => {
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    },
+    []
+  );
 
   // For "match" the target is shown, so we start from a neutral grey (the user
   // must actually recreate it). For directional challenges the user works from
@@ -41,14 +74,32 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
 
   const [guessHex, setGuessHex] = useState(initialGuess);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [gained, setGained] = useState(0);
+  const [winLine, setWinLine] = useState(WIN_LINES[0]);
 
   const best = progress.best[challenge.id];
+  const bestStars = progress.stars[challenge.id] ?? 0;
   const showTarget = challenge.type === "match";
 
   const handleCheck = () => {
     const result = evaluateGuess(challenge, guessHex);
+    const streakAfter = result.passed ? progress.streak + 1 : 0;
+    setGained(pointsForAttempt(result.score, streakAfter));
+    if (result.passed) {
+      setWinLine(WIN_LINES[Math.floor(Math.random() * WIN_LINES.length)]);
+      // Celebrate, then hand off to the parent to swap in a new challenge.
+      if (onSolved) {
+        if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+        advanceTimer.current = window.setTimeout(() => onSolved(), 2000);
+      }
+    }
     recordAttempt(challenge.id, result.score);
     setFeedback(result);
+  };
+
+  const advanceNow = () => {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current);
+    onSolved?.();
   };
 
   const handleReset = () => {
@@ -93,12 +144,13 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
             />
           )}
           {best !== undefined && (
-            <div className="ml-auto self-center text-right">
+            <div className="ml-auto flex flex-col items-end gap-1 self-center text-right">
               <p className="text-xs font-medium text-muted">Best score</p>
-              <p className="font-mono text-lg font-bold text-ink">
+              <p className="font-mono text-lg font-bold leading-none text-ink">
                 {best}
                 <span className="text-sm text-muted"> / 100</span>
               </p>
+              <Stars value={bestStars} size="sm" />
             </div>
           )}
         </div>
@@ -142,16 +194,24 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
 
         {/* Actions. */}
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handleCheck} className="flex-1">
-            <Check className="h-4 w-4" aria-hidden /> Check answer
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            aria-label="Try again and reset feedback"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden /> Try again
-          </Button>
+          {feedback?.passed && onSolved ? (
+            <Button onClick={advanceNow} className="flex-1">
+              <ArrowRight className="h-4 w-4" aria-hidden /> Next challenge
+            </Button>
+          ) : (
+            <>
+              <Button onClick={handleCheck} className="flex-1">
+                <Check className="h-4 w-4" aria-hidden /> Check answer
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                aria-label="Try again and reset feedback"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden /> Try again
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Feedback. */}
@@ -166,13 +226,14 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
               role="status"
               aria-live="polite"
               className={cn(
-                "mt-auto rounded-2xl border p-4",
+                "relative mt-auto overflow-hidden rounded-2xl border p-4",
                 feedback.passed
                   ? "border-emerald-200 bg-emerald-50"
                   : "border-border bg-surface-2/60"
               )}
             >
-              <div className="flex items-start gap-3">
+              {feedback.passed && <Confetti count={18} />}
+              <div className="relative flex items-start gap-3">
                 <span
                   className={cn(
                     "grid h-9 w-9 shrink-0 place-items-center rounded-xl",
@@ -189,14 +250,40 @@ export function ChallengeCard({ challenge }: { challenge: Challenge }) {
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p
-                    className={cn(
-                      "text-sm font-semibold",
-                      feedback.passed ? "text-emerald-800" : "text-ink"
-                    )}
-                  >
-                    {feedback.headline}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p
+                      className={cn(
+                        "text-sm font-semibold",
+                        feedback.passed ? "text-emerald-800" : "text-ink"
+                      )}
+                    >
+                      {feedback.passed ? winLine : feedback.headline}
+                    </p>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 font-mono text-xs font-bold",
+                        feedback.passed
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-surface-2 text-muted"
+                      )}
+                    >
+                      +{gained} pts
+                    </span>
+                  </div>
+
+                  {/* Stars earned this attempt. */}
+                  {feedback.passed && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Stars
+                        value={starsForScore(feedback.score)}
+                        size="md"
+                        animate
+                      />
+                      <span className="text-xs font-medium text-emerald-700">
+                        {starsForScore(feedback.score)} / 3 stars
+                      </span>
+                    </div>
+                  )}
 
                   {/* Score: number + accessible progress bar. */}
                   <div className="mt-2">
